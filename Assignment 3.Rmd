@@ -1,0 +1,110 @@
+---
+title: "Assignment - 3"
+author: "Matthew Farris"
+date: "September 13, 2015"
+output: html_document
+---
+## Wine Quality
+
+As a Amatuer Wine connoisseur, I found the wine quality dataset to be the most intriquing, so I decided to pulled from it
+
+```{r}
+library(RCurl)
+
+
+
+redwineURL <-getURL("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv")
+
+redwine <-read.csv(text = redwineURL, sep =";")
+
+whitewineURL <-getURL("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv")
+
+whitewine <-read.csv(text = whitewineURL, sep =";")
+
+summary(redwine)
+
+summary(whitewine)
+```
+
+For this dataset, I thought it would be a good idea to find the best of the best. For my purpose here, I was extremely interested in the "rating". I did a bit of research and found that most sites use a similar criteria to this one (From Wine Spectactor).
+
+
+|Rating | Descriptor | Description|  
+|-------|------------|------------|  
+|95-100 | Classic | a great wine|  
+|90-94 | Outstanding | superior character and style|  
+|80-89 | Good/Very Good | wine with special qualities|  
+|70-79 | Average |  drinkable with minor flaws|  
+|60-69 | Below average | drinkable but not recommended |  
+|50-59 | Poor | undrinkable, not recommended|  
+
+
+  
+Furthermore, review of the website Wine Folly has found that ratings tend to follow a normal distribution. So, to check to see if this data follows this trend, I plotted a histogram of the data.  
+
+```{r}
+hist(redwine$quality, xlab = "Quality", main = "Red Wine Quality")
+
+hist(whitewine$quality, xlab = "Quality", main = "White Wine Quality")
+```
+
+As the data appears to mimic the norm, I felt that, selecting all the great wines would be anything above a 7 on this scale, so this became the first criteria I wanted to use for my subset. 
+
+Furthermore, I wanted to focus most on the areas that I believe most influence our precieved taste of a wine. When we think of wine tasting, we most often think of acidity, sweetness, and alcohol content. Along with the rating, this made 4 columns that I wished to focus on. 
+
+```{r}
+
+BestReds <- subset(redwine, quality >= 7, select = c(residual.sugar,pH,alcohol,quality))
+summary(BestReds)
+
+BestWhites <- subset(whitewine, quality >= 7, select = c(residual.sugar,pH,alcohol,quality))
+summary(BestWhites)
+```
+
+So this is one way to sparse out the data that we have on hand. I felt that this was a good way to provide a summary of the 
+
+I decided to take the subset one step further. In white wines, there is a number classification for the "sweetness" of the wine. It ranges from 00 to 10. The following shows how much sugar is consider "sweet or dry". 
+
+|Sugar(g/l)*|Characteristic|
+|-----|--------------|
+| > 1 | Bone Dry|
+| 1-5 | Dry|
+|5 - 25| Off-Dry|
+|25 - 45| Medium Dry|
+|45 - 65| Sweet|
+| < 65 | Very Sweet |
+
+*Please note there is some variation in what is "Sweet" when it comes to sugarl levels. Some compare pH and sugar levels, which I may do at a later date, but as of now I just wanted to show some uses of subsets. I picked the most common sugar levels I could find. 
+
+We see that none of the medium dry or sweet wines made it in the top white wines, so I decided to go back to the original data set, as a way to just visual some of the data using a box plot. I understand their are simplier ways to concatenate data like this (ie making a new column in the data frame and then creating a box plot), but I decided to go this route as proof of concept, and to highlight column name changes as this was necessary to produce a readable box plot. 
+
+
+
+```{r}
+
+Bonedry <- subset(whitewine, residual.sugar >= 0 & residual.sugar < 1, select= residual.sugar)
+Dry <- subset(whitewine, residual.sugar >= 1  & residual.sugar < 5,  select= residual.sugar)
+Off_Dry <- subset(whitewine, residual.sugar >= 5  & residual.sugar < 25,  select= residual.sugar)
+Medium_Dry <- subset(whitewine, residual.sugar >= 25  & residual.sugar < 45,  select= residual.sugar)
+Sweet <-subset(whitewine, residual.sugar >= 45  & residual.sugar < 65,  select= residual.sugar)
+Very_Sweet <- subset(whitewine, residual.sugar >= 65,  select= residual.sugar)
+
+names(Bonedry)[names(Bonedry) == "residual.sugar"] <- "Bonedry"
+names(Dry)[names(Dry) == "residual.sugar"] <- "Dry"
+names(Off_Dry)[names(Off_Dry) == "residual.sugar"] <- "Off_Dry"
+names(Medium_Dry)[names(Medium_Dry) == "residual.sugar"] <- "Medium"
+names(Sweet)[names(Sweet) == "residual.sugar"] <- "Sweet"
+names(Very_Sweet)[names(Very_Sweet) == "residual.sugar"] <- "Very_Sweet"
+
+
+
+boxplot(c(Bonedry,Dry,Off_Dry,Medium_Dry,Sweet,Very_Sweet), main = "Sweetness Distribution")
+```
+
+
+Citations:
+
+https://vinewineandwander.wordpress.com/2012/03/10/0-10-decoded/
+
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. 
+Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553, 2009.
